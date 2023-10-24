@@ -1,73 +1,26 @@
 
-
-var zaloKey = "RL8DzmFxYVhpt2moTHyg9Q==";
-var zaloCokie = "zpw_sek=cBsK.257704670.a0.LOhCFd8fBt-iQtDmKoalVmaBIXHG4mqjFX5h1HzlLoOaGLyBG4H0ApfGI4OZ519T3uBIQjX1K2UWA6ENb4qlVm; ";
+ 
 const axios = require('./initAxios');
-
+const {getEncodeParams } = require ("./helper");
 class ZaloSendMessage {
-
-    async getDecodeParams(params) {
-        try {
-
-            const FormData = require('form-data');
-            let data = new FormData();
-            data.append('type', '1');
-            data.append('message', params);
-            data.append('key', this.zaloKey);
-            data.append('deviceID', '343');
-            data.append('output', 'base64');
-
-            let config = {
-                method: 'post',
-                maxBodyLength: Infinity,
-                url: 'http://cqdgo.com/zalo/zaloencode.php?type=decode',
-                headers: {
-                    ...data.getHeaders()
-                },
-                data: data
-            };
-            const response = await axios.request(config)
-            return response.data;
-        } catch (error) {
-
-        }
+    zaloKey;
+    zaloCokie;
+    imei;
+   
+    constructor(zaloKey, zaloCookie, imei) {
+        this.zaloCokie = zaloCookie;
+        this.zaloKey = zaloKey;
+        this.imei = imei;
+       
     }
 
+   
 
+    async doSendMessageZalo(content, clientID) {
 
-    async getEncodeParams(params) {
-        try {
-            const FormData = require('form-data');
-            let data = new FormData();
-            data.append('type', '1');
-            data.append('message', params);
-            data.append('key', zaloKey);
-            data.append('deviceID', '343');
-            data.append('output', 'base64');
+        let params = { "message": content, "clientId": Date.now(), "imei": this.imei, "ttl": 0, "toid": clientID }
 
-            let config = {
-                method: 'post',
-                maxBodyLength: Infinity,
-                url: 'http://cqdgo.com/zalo/zaloencode.php?type=encode',
-                headers: {
-                    ...data.getHeaders()
-                },
-                data: data
-            };
-
-            const response = await axios.request(config)
-            return response.data;
-        } catch (error) {
-
-        }
-    }
-
-
-    async doSendMessageZalo(imei, content, clientID) {
-
-        let params = { "message": content, "clientId": Date.now(), "imei": imei, "ttl": 0, "toid": clientID }
-
-        let paramEncode = await this.getEncodeParams(JSON.stringify(params))
+        let paramEncode = await getEncodeParams(JSON.stringify(params),this.zaloKey)
         const qs = require('qs');
         let data = qs.stringify({
             'params': paramEncode
@@ -77,7 +30,7 @@ class ZaloSendMessage {
             maxBodyLength: Infinity,
             url: 'https://tt-chat2-wpa.chat.zalo.me/api/message/sms?zpw_ver=618&zpw_type=30&nretry=0',
             headers: {
-                'Cookie': zaloCokie,
+                'Cookie': this.zaloCokie,
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'User-Agent': 'ZaloPC-win32-24v618'
             },
@@ -88,7 +41,7 @@ class ZaloSendMessage {
 
     }
 
-    async doSendMessage(imei, content, contentReply, clientID, msgId) {
+    async doSendMessage(content, contentReply, clientID, msgId) {
         var textMessage = content;
         var lengthChar = 2000;
         var loopTime = Math.ceil(textMessage?.length / lengthChar);
@@ -101,7 +54,7 @@ class ZaloSendMessage {
             const textMessageSplit = textMessage.substr(start, lengthIndex)
             start += lengthIndex;
             if (msgId) {
-                await this.doSendMessageZaloReply(imei, textMessageSplit, contentReply, clientID, msgId, index);
+                await this.doSendMessageZaloReply(textMessageSplit, contentReply, clientID, msgId, index);
 
             }
             else {
@@ -111,7 +64,7 @@ class ZaloSendMessage {
         }
     }
 
-    async doSendMessageZaloReply(imei, content, contentReply, clientID, msgId, index) {
+    async doSendMessageZaloReply(content, contentReply, clientID, msgId, index) {
 
         let params = {
             "toid": clientID,
@@ -123,12 +76,13 @@ class ZaloSendMessage {
             "qmsgType": 1,
             "qmsgTs": Date.now(),
             "qmsg": contentReply,
-            "imei": imei,
+            "imei": this.imei,
             "qmsgTTL": 0,
             "ttl": 0
         }
 
-        let paramEncode = await this.getEncodeParams(JSON.stringify(params))
+
+        let paramEncode = await  getEncodeParams(JSON.stringify(params),this.zaloKey)
         const qs = require('qs');
         let data = qs.stringify({
             'params': paramEncode
@@ -138,7 +92,7 @@ class ZaloSendMessage {
             maxBodyLength: Infinity,
             url: 'https://tt-chat2-wpa.chat.zalo.me/api/message/quote?zpw_ver=618&zpw_type=30&nretry=0',
             headers: {
-                'Cookie': zaloCokie,
+                'Cookie': this.zaloCokie,
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'User-Agent': 'ZaloPC-win32-24v618'
             },
@@ -146,18 +100,18 @@ class ZaloSendMessage {
         };
 
         var smsData = await axios.request(config);
-        console.log(index);
+
 
     }
     userTyping = [
 
     ];
-    async isTypingState(clientID, imei) {
+    async isTypingState(clientID) {
         // if (this.userTyping.length > 0) {  
         if (this.userTyping[clientID] === false || this.userTyping[clientID] === undefined) {
             console.log(this.userTyping[clientID] === false || this.userTyping[clientID] === undefined);
             this.userTyping[clientID] = true
-            this.sendTypingState(clientID, imei);
+            this.sendTypingState(clientID, this.imei);
             setTimeout(() => {
                 this.userTyping[clientID] = false
             }, 13000);
@@ -174,12 +128,12 @@ class ZaloSendMessage {
 
 
     }
-    async sendTypingState(clientID, imei) {
+    async sendTypingState(clientID) {
 
 
 
-        var params = { "toid": clientID, "destType": 3, "imei": imei };
-        let paramEncode = await this.getEncodeParams(JSON.stringify(params))
+        var params = { "toid": clientID, "destType": 3, "imei": this.imei };
+        let paramEncode = await  getEncodeParams(JSON.stringify(params),this.zaloKey)
         const qs = require('qs');
         let data = qs.stringify({
             'params': paramEncode
@@ -189,7 +143,7 @@ class ZaloSendMessage {
             maxBodyLength: Infinity,
             url: 'https://tt-chat2-wpa.chat.zalo.me/api/message/typing?zpw_ver=618&zpw_type=30',
             headers: {
-                'Cookie': zaloCokie,
+                'Cookie': this.zaloCokie,
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'User-Agent': 'ZaloCB-win32-24v618'
             },
@@ -198,6 +152,9 @@ class ZaloSendMessage {
 
         var smsData = axios.request(config);
     }
+
+
+
 }
 
 

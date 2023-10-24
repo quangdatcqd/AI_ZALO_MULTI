@@ -1,6 +1,19 @@
-const axios = require('./initAxios'); 
+const axios = require('./initAxios');
+const {generateRandomString} = require ("./helper");
+  require("dotenv").config();;
 class PoeApi {
   BASE_URL = 'https://www.quora.com';
+    HEADERS = {
+    'Host': 'www.quora.com',
+    'Accept': '*/*',
+    'apollographql-client-version': '1.1.6-65',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'User-Agent': 'Poe 1.1.6 rv:65 env:prod (iPhone14,2; iOS 16.2; en_US)',
+    'apollographql-client-name': 'com.quora.app.Experts-apollo-ios',
+    'Connection': 'keep-alive',
+    'Content-Type': 'application/json',  
+    "Cookie":process.env.POE_COOKIE
+};
 
   FORMKEY_PATTERN = /formkey": "(.*?)"/;
   GRAPHQL_QUERIES = {
@@ -30,10 +43,11 @@ class PoeApi {
     `,
   };
   client;
-  constructor(headers  ) { 
+  constructor( ) {
+    console.log("getminsec");
     this.client = axios.create({
-      headers: headers
-    });
+      headers: this.HEADERS
+    }); 
 
   }
 
@@ -41,14 +55,14 @@ class PoeApi {
     return this.client.get(this.BASE_URL)
       .then((response) => {
         const regex = new RegExp(this.FORMKEY_PATTERN);
-        const match = response.data.match(regex);  
-        return  {
-          formKey:match && match[1] ,
-          cookie : response.headers["set-cookie"]
+        const match = response.data.match(regex);
+        return {
+          formKey: match && match[1],
+          cookie: response.headers["set-cookie"]
         };
       })
       .catch((error) => {
-        console.log(error.message);
+        console.log("FORM KEY FAIL");
         throw error;
       });
   }
@@ -57,7 +71,7 @@ class PoeApi {
   async sendRequest(path, data) {
     try {
       const response = await this.client.post(`${this.BASE_URL}/poe_api/${path}`, data);
-      
+    
       return response.data;
     } catch (e) {
       console.log(e.message);
@@ -100,9 +114,42 @@ class PoeApi {
     };
   }
 
+  async   getMinSeq() {
+    
+    return this.client.get("https://poe.com/api/settings?channel=poe-chan56-8888-zrpjtkpmrjxawragfguz")
+        .then((response) => {
+            return response?.data?.tchannelData?.minSeq;
+        })
+        .catch((error) => {
+            console.log("getMinSeq FAIL");
+            
+        });
+}
+
   async sendMessage(message, bot = 'a2', chatId = '') {
+    // const data = {
+    //   "queryName": "chatHelpers_sendMessageMutation_Mutation",
+    //   "variables": {
+    //     "chatId": chatId,
+    //     "bot": bot,
+    //     "query": message,
+    //     "source": {
+    //       "sourceType": "chat_input",
+    //       "chatInputMetadata": {
+    //         "useVoiceRecord": false
+    //       }
+    //     },
+    //     "withChatBreak": false,
+    //     "clientNonce": "f5JsNITBva7VSPJg",
+    //     "sdid": "a8db7ebb-9738-425f-a3f3-b835eb8f0a2f",
+    //     "attachments": []
+    //   },
+    //   "extensions": {
+    //     "hash": "5fd489242adf25bf399a95c6b16de9665e521b76618a97621167ae5e11e4bce4"
+    //   }
+    // }
     const data = {
-      "queryName": "chatHelpers_sendMessageMutation_Mutation",
+      "queryName": "sendMessageMutation",
       "variables": {
         "chatId": chatId,
         "bot": bot,
@@ -113,58 +160,85 @@ class PoeApi {
             "useVoiceRecord": false
           }
         },
-        "withChatBreak": false,
-        "clientNonce": "f5JsNITBva7VSPJg",
+        "clientNonce": "Lex0pHZ8KGIT1613",
         "sdid": "a8db7ebb-9738-425f-a3f3-b835eb8f0a2f",
-        "attachments": []
+        "attachments": [],
+        "shouldFetchChat": false
       },
       "extensions": {
-        "hash": "5fd489242adf25bf399a95c6b16de9665e521b76618a97621167ae5e11e4bce4"
+        "hash": "6e8d48dc338a0d087e5fcbd1b20478ee6d19a8d5131b4c456602af9a1b727e45"
       }
-    } 
+    };
     return await this.sendRequest('gql_POST', data);
   }
 
 
-  async createNewChat(bot) {
+  async createNewChat(bot) { 
+    //   const data = {
+    //     "queryName": "chatHelpersSendNewChatMessageMutation",
+    //     "variables": {
+    //         "bot": bot,
+    //         "query": "xin chào",
+    //         "source": {
+    //             "sourceType": "chat_input",
+    //             "chatInputMetadata": {
+    //                 "useVoiceRecord": false,
+    //                 "newChatContext": "plus_new_chat_button"
+    //             }
+    //         },
+    //         "sdid": "a8db7ebb-9738-425f-a3f3-b835eb8f0a2f",
+    //         "attachments": []
+    //     },
+    //     "extensions": {
+    //         "hash": "943e16d73c3582759fa112842ef050e85d6f0048048862717ba861c828ef3f82"
+    //     }
+    // }
+    const nounce =  generateRandomString(16);
     const data = {
-      "queryName": "chatHelpersSendNewChatMessageMutation",
+      "queryName": "sendMessageMutation",
       "variables": {
-          "bot": bot,
-          "query": "xin chào",
-          "source": {
-              "sourceType": "chat_input",
-              "chatInputMetadata": {
-                  "useVoiceRecord": false,
-                  "newChatContext": "plus_new_chat_button"
-              }
-          },
-          "sdid": "a8db7ebb-9738-425f-a3f3-b835eb8f0a2f",
-          "attachments": []
+        "chatId": null,
+        "bot": bot,
+        "query": "xin chao",
+        "source": {
+          "sourceType": "chat_input",
+          "chatInputMetadata": {
+            "useVoiceRecord": false,
+            "newChatContext": "home_page_input"
+          }
+        },
+        "clientNonce": nounce,
+        "sdid": "a8db7ebb-9738-425f-a3f3-b835eb8f0a2f",
+        "attachments": [],
+        "shouldFetchChat": true
       },
       "extensions": {
-          "hash": "943e16d73c3582759fa112842ef050e85d6f0048048862717ba861c828ef3f82"
+        "hash": "6e8d48dc338a0d087e5fcbd1b20478ee6d19a8d5131b4c456602af9a1b727e45"
       }
-  }
+    }
+    
     return await this.sendRequest('gql_POST', data);
   }
 
-  
+
 
   async cancelMessage(messageID) {
     const data = {
       "queryName": "chatHelpers_messageCancel_Mutation",
       "variables": {
-          "messageId": messageID,
-          "textLength": 0,
-          "linkifiedTextLength": 0
+        "messageId": messageID,
+        "textLength": 0,
+        "linkifiedTextLength": 0
       },
       "extensions": {
-          "hash": "59b10f19930cf95d3120612e72d271e3346a7fc9599e47183a593a05b68c617e"
+        "hash": "59b10f19930cf95d3120612e72d271e3346a7fc9599e47183a593a05b68c617e"
       }
-  }
+    }
     return await this.sendRequest('gql_POST', data);
   }
+
+
+
 
 
 
@@ -234,7 +308,8 @@ class PoeApi {
       }
     }
   }
-}
 
+}
+ 
 
 module.exports = PoeApi;

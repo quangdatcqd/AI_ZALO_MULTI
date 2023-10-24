@@ -1,0 +1,138 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZALO AI - Assitant</title>
+    <style>
+        body {
+            margin: 0;
+            background-image: url("background.jpg");
+            background-size: cover;
+            backdrop-filter: brightness(0.5);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .container {
+
+            width: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            font-size: 50px;
+            font-weight: bold;
+        }
+
+        #qr_code {
+            width: 400px;
+            height: 400px;
+            border-radius: 25px;
+        }
+
+        #zalo_name {
+            color: #9899ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <img src="default_qr.png" alt="" id="qr_code" />
+        <p id="zalo_name"></p>
+    </div>
+    <script>
+        const BASE_URL = `http://localhost:3000/`;
+        var qrNode = document.getElementById("qr_code");
+        var zaloName = document.getElementById("zalo_name");
+        var countdownInterval = null;
+        function runApp() {
+            fetch(BASE_URL + "genqr").then(async (response) => {
+                const data = await response.json()
+                localStorage.setItem("imei", data?.imei);
+                localStorage.setItem("ZCID", data?.ZCID);
+                qrNode.setAttribute("src", "data:image/png;base64," + data?.data?.base64_qr);
+                countdown(180);
+                waiting(data);
+
+            })
+        }
+        runApp();
+
+        async function waiting(data) {
+            let waitingData = await fetch(BASE_URL + "waiting/" + encodeURIComponent(data?.data?.chk_wait_scan))
+            waitingData = await waitingData.json();
+            if (waitingData?.error_code == -20) {
+
+                qrNode.setAttribute("src", "data:image/png;base64," + waitingData?.data?.base64_qr);
+                clearInterval(countdownInterval)
+                countdown(180);
+                waiting(waitingData);
+            }
+            else if (waitingData == 0) waiting(data);
+            else if (waitingData?.error_code == 18010) runApp();
+            else {
+                zaloName.innerText = waitingData?.data?.display_name;
+                qrNode.setAttribute("src", waitingData?.data?.avatar);
+                clearInterval(countdownInterval)
+                if (waitingData?.error_code == 0) {
+                    const confirmData = await getLoginInfo(data?.data?.chk_wait_cfirm);
+                    console.log(confirmData)
+                }
+
+            }
+
+
+        }
+        function countdown(seconds) {
+            let minutes = Math.floor(seconds / 60);
+            let remainingSeconds = seconds % 60;
+
+            countdownInterval = setInterval(() => {
+                if (seconds > 0) {
+                    seconds--;
+                    minutes = Math.floor(seconds / 60);
+                    remainingSeconds = seconds % 60;
+                    zaloName.innerText = minutes + ":" + remainingSeconds;
+                } else {
+                    clearInterval(countdownInterval);
+                    console.log('Đếm ngược hoàn thành!');
+                    // runApp();  
+                }
+            }, 1000);
+        }
+
+
+
+        async function getLoginInfo(url) {
+            var myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+
+            var raw = JSON.stringify({
+                "imei": localStorage.getItem("imei"),
+                "zcid": localStorage.getItem("ZCID"),
+                "url": url
+            });
+
+            var requestOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: raw,
+                redirect: 'follow'
+            };
+
+            let data = await fetch("http://localhost:3000/getLoginInfo", requestOptions)
+            data = await data.json();
+
+            if (data?.status) {
+                console.log(data)
+                zaloName.innerText = data?.message
+                clearInterval(countdownInterval);
+            }
+        }
+    </script>
+</body>
+
+</html>
