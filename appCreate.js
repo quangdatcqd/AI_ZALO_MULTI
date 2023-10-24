@@ -15,19 +15,31 @@ class AppCreate {
     PoeAPP;
     Formkey;
     constructor({ zaloCookie, zaloKey, imei }) {
-        this.zaloCookie = this.zaloCookie;
+        this.zaloCookie = zaloCookie;
         this.imei = imei;
         this.zaloKey = zaloKey;
         this.ZaloAPI = new ZaloSendMessage(zaloKey, zaloCookie, imei);
-        this.ZaloSocket = new ZALOSOCKET(zaloCookie);
+        this.ZaloSocket;
         this.PoeAPP = new PoeApi();
         this.initZaloSocket();
-        this.initPOESocket();
+        this.initPOESocket(); +
+            setInterval(() => {
+                try {
+
+                    this.POESocket.close();
+                    this.ZaloSocket.Socket.close(1000);
+                    console.log("close app");
+
+                } catch (error) {
+                    console.log(error);
+                }
+
+            }, 1000 * 60 * 5);
     }
 
 
     initZaloSocket() {
-
+        this.ZaloSocket = new ZALOSOCKET(this.zaloCookie);
         this.ZaloSocket.Socket.onopen = function (event) {
             console.log("socket zalo onopen");
         };
@@ -106,9 +118,9 @@ class AppCreate {
         this.POESocket.on('error', () => {
             console.log("poe error  ");
 
-            setTimeout(() => {
-                this.initPOESocket();
-            }, 5000);
+
+            this.initPOESocket();
+
         });
 
         this.POESocket.on('open', () => {
@@ -162,10 +174,8 @@ class AppCreate {
         });
         this.POESocket.on("close", (code, reason) => {
             console.log("poe close");
+            this.initPOESocket();
 
-            setTimeout(() => {
-                this.initPOESocket();
-            }, 5000);
         });
     }
 
@@ -177,18 +187,7 @@ class AppCreate {
         }
     }
 
-    // setInterval(() => {
-    //     try {
-    //       
-    //         POESocket.close();
-    //         this.ZaloSocket.Socket.close();
 
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    //     initPOESocket();
-    //     initZaloSocket();
-    // }, 1000 * 60 * 5);
 
 
     async newChatCreate() {

@@ -20,7 +20,7 @@ var zaloCookie =
 var imei =
   "aa1fceed-ad8b-43a5-b7eb-3695bd5946dd-e3f8101c41b40572973227d0a64620d0";
 var zaloKey = "gANz7W+ZWL47gvQr63rKFg==";
-// const AIAPP = new AppCreate(zaloCookie,zaloKey,imei);
+const AIAPP = new AppCreate({ zaloCookie, zaloKey, imei });
 
 app.get("/home", (req, res) => {
   res.render("index", { layout: false });

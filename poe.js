@@ -1,9 +1,9 @@
 const axios = require('./initAxios');
-const {generateRandomString} = require ("./helper");
-  require("dotenv").config();;
+const { generateRandomString } = require("./helper");
+require("dotenv").config();;
 class PoeApi {
   BASE_URL = 'https://www.quora.com';
-    HEADERS = {
+  HEADERS = {
     'Host': 'www.quora.com',
     'Accept': '*/*',
     'apollographql-client-version': '1.1.6-65',
@@ -11,9 +11,9 @@ class PoeApi {
     'User-Agent': 'Poe 1.1.6 rv:65 env:prod (iPhone14,2; iOS 16.2; en_US)',
     'apollographql-client-name': 'com.quora.app.Experts-apollo-ios',
     'Connection': 'keep-alive',
-    'Content-Type': 'application/json',  
-    "Cookie":process.env.POE_COOKIE
-};
+    'Content-Type': 'application/json',
+    "Cookie": process.env.POE_COOKIE
+  };
 
   FORMKEY_PATTERN = /formkey": "(.*?)"/;
   GRAPHQL_QUERIES = {
@@ -43,11 +43,11 @@ class PoeApi {
     `,
   };
   client;
-  constructor( ) {
+  constructor() {
     console.log("getminsec");
     this.client = axios.create({
       headers: this.HEADERS
-    }); 
+    });
 
   }
 
@@ -71,7 +71,7 @@ class PoeApi {
   async sendRequest(path, data) {
     try {
       const response = await this.client.post(`${this.BASE_URL}/poe_api/${path}`, data);
-    
+
       return response.data;
     } catch (e) {
       console.log(e.message);
@@ -114,17 +114,17 @@ class PoeApi {
     };
   }
 
-  async   getMinSeq() {
-    
+  async getMinSeq() {
+
     return this.client.get("https://poe.com/api/settings?channel=poe-chan56-8888-zrpjtkpmrjxawragfguz")
-        .then((response) => {
-            return response?.data?.tchannelData?.minSeq;
-        })
-        .catch((error) => {
-            console.log("getMinSeq FAIL");
-            
-        });
-}
+      .then((response) => {
+        return response?.data?.tchannelData?.minSeq;
+      })
+      .catch((error) => {
+        console.log("getMinSeq FAIL");
+
+      });
+  }
 
   async sendMessage(message, bot = 'a2', chatId = '') {
     // const data = {
@@ -173,7 +173,7 @@ class PoeApi {
   }
 
 
-  async createNewChat(bot) { 
+  async createNewChat(bot) {
     //   const data = {
     //     "queryName": "chatHelpersSendNewChatMessageMutation",
     //     "variables": {
@@ -193,7 +193,7 @@ class PoeApi {
     //         "hash": "943e16d73c3582759fa112842ef050e85d6f0048048862717ba861c828ef3f82"
     //     }
     // }
-    const nounce =  generateRandomString(16);
+    const nounce = generateRandomString(16);
     const data = {
       "queryName": "sendMessageMutation",
       "variables": {
@@ -216,7 +216,7 @@ class PoeApi {
         "hash": "6e8d48dc338a0d087e5fcbd1b20478ee6d19a8d5131b4c456602af9a1b727e45"
       }
     }
-    
+
     return await this.sendRequest('gql_POST', data);
   }
 
@@ -310,6 +310,6 @@ class PoeApi {
   }
 
 }
- 
+
 
 module.exports = PoeApi;
